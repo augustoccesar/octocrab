@@ -219,7 +219,12 @@ fn resolve_field(
         property_type_name
     };
 
-    codegen::Field::new(property_name, codegen::Type::new(property_type_name))
+    let mut field = codegen::Field::new(property_name, codegen::Type::new(property_type_name));
+    if let Some(description) = &schema.schema_data.description {
+        field.doc(description);
+    }
+
+    field
 }
 
 fn schema_name_as_type(schema_name: &str) -> String {
