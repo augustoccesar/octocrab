@@ -1,0 +1,12 @@
+[package]
+name = "octocrab-codegen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+codegen = "0.3.0"
+env_logger = "0.11.10"
+indexmap = "2.14.0"
+log = "0.4.30"
+openapiv3 = "2"
+serde_json = "1"
