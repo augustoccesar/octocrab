@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.52.0](https://github.com/augustoccesar/octocrab/compare/v0.51.0...v0.52.0) - 2026-05-27
+
+### Added
+
+- [**breaking**] made PullRequest to be able to accept SimplePullRequest payload from github ([#902](https://github.com/augustoccesar/octocrab/pull/902))
+- add list-artifacts-for-a-repository endpoint ([#896](https://github.com/augustoccesar/octocrab/pull/896))
+- support pinned comments ([#894](https://github.com/augustoccesar/octocrab/pull/894))
+
 ## [0.51.0](https://github.com/XAMPPRocky/octocrab/compare/v0.50.0...v0.51.0) - 2026-05-09
 
 ### Fixed
