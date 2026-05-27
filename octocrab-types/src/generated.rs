@@ -1,3 +1,262 @@
+struct SimpleUser {
+    name: Option<String>,
+    email: Option<String>,
+    login: String,
+    id: i64,
+    node_id: String,
+    avatar_url: String,
+    gravatar_id: Option<String>,
+    url: String,
+    html_url: String,
+    followers_url: String,
+    following_url: String,
+    gists_url: String,
+    starred_url: String,
+    subscriptions_url: String,
+    organizations_url: String,
+    repos_url: String,
+    events_url: String,
+    received_events_url: String,
+    type: String,
+    site_admin: bool,
+    starred_at: String,
+    user_view_type: String,
+}
+
+struct LabelsItem {
+    id: i64,
+    node_id: String,
+    url: String,
+    name: String,
+    description: Option<String>,
+    color: String,
+    default: bool,
+}
+
+struct NullableSimpleUser {
+    name: Option<String>,
+    email: Option<String>,
+    login: String,
+    id: i64,
+    node_id: String,
+    avatar_url: String,
+    gravatar_id: Option<String>,
+    url: String,
+    html_url: String,
+    followers_url: String,
+    following_url: String,
+    gists_url: String,
+    starred_url: String,
+    subscriptions_url: String,
+    organizations_url: String,
+    repos_url: String,
+    events_url: String,
+    received_events_url: String,
+    type: String,
+    site_admin: bool,
+    starred_at: String,
+    user_view_type: String,
+}
+
+struct NullableMilestone {
+    url: String,
+    html_url: String,
+    labels_url: String,
+    id: i64,
+    node_id: String,
+    number: i64,
+    state: String,
+    title: String,
+    description: Option<String>,
+    creator: Option<NullableSimpleUser>,
+    open_issues: i64,
+    closed_issues: i64,
+    created_at: String,
+    updated_at: String,
+    closed_at: Option<String>,
+    due_on: Option<String>,
+}
+
+struct TeamSimple {
+    id: i64,
+    node_id: String,
+    url: String,
+    members_url: String,
+    name: String,
+    description: Option<String>,
+    permission: String,
+    privacy: String,
+    notification_setting: String,
+    html_url: String,
+    repositories_url: String,
+    slug: String,
+    ldap_dn: String,
+    type: String,
+    organization_id: i64,
+    enterprise_id: i64,
+}
+
+struct NullableLicenseSimple {
+    key: String,
+    name: String,
+    url: Option<String>,
+    spdx_id: Option<String>,
+    node_id: String,
+    html_url: String,
+}
+
+struct RepositoryPermissions {
+    admin: bool,
+    pull: bool,
+    triage: bool,
+    push: bool,
+    maintain: bool,
+}
+
+struct RepositoryCodeSearchIndexStatus {
+    lexical_search_ok: bool,
+    lexical_commit_sha: String,
+}
+
+struct Repository {
+    id: i64,
+    node_id: String,
+    name: String,
+    full_name: String,
+    license: Option<NullableLicenseSimple>,
+    forks: i64,
+    permissions: RepositoryPermissions,
+    owner: SimpleUser,
+    private: bool,
+    html_url: String,
+    description: Option<String>,
+    fork: bool,
+    url: String,
+    archive_url: String,
+    assignees_url: String,
+    blobs_url: String,
+    branches_url: String,
+    collaborators_url: String,
+    comments_url: String,
+    commits_url: String,
+    compare_url: String,
+    contents_url: String,
+    contributors_url: String,
+    deployments_url: String,
+    downloads_url: String,
+    events_url: String,
+    forks_url: String,
+    git_commits_url: String,
+    git_refs_url: String,
+    git_tags_url: String,
+    git_url: String,
+    issue_comment_url: String,
+    issue_events_url: String,
+    issues_url: String,
+    keys_url: String,
+    labels_url: String,
+    languages_url: String,
+    merges_url: String,
+    milestones_url: String,
+    notifications_url: String,
+    pulls_url: String,
+    releases_url: String,
+    ssh_url: String,
+    stargazers_url: String,
+    statuses_url: String,
+    subscribers_url: String,
+    subscription_url: String,
+    tags_url: String,
+    teams_url: String,
+    trees_url: String,
+    clone_url: String,
+    mirror_url: Option<String>,
+    hooks_url: String,
+    svn_url: String,
+    homepage: Option<String>,
+    language: Option<String>,
+    forks_count: i64,
+    stargazers_count: i64,
+    watchers_count: i64,
+    size: i64,
+    default_branch: String,
+    open_issues_count: i64,
+    is_template: bool,
+    topics: Vec<String>,
+    has_issues: bool,
+    has_projects: bool,
+    has_wiki: bool,
+    has_pages: bool,
+    has_downloads: bool,
+    has_discussions: bool,
+    has_pull_requests: bool,
+    pull_request_creation_policy: String,
+    archived: bool,
+    disabled: bool,
+    visibility: String,
+    pushed_at: Option<String>,
+    created_at: Option<String>,
+    updated_at: Option<String>,
+    allow_rebase_merge: bool,
+    temp_clone_token: String,
+    allow_squash_merge: bool,
+    allow_auto_merge: bool,
+    delete_branch_on_merge: bool,
+    allow_update_branch: bool,
+    use_squash_pr_title_as_default: bool,
+    squash_merge_commit_title: String,
+    squash_merge_commit_message: String,
+    merge_commit_title: String,
+    merge_commit_message: String,
+    allow_merge_commit: bool,
+    allow_forking: bool,
+    web_commit_signoff_required: bool,
+    open_issues: i64,
+    watchers: i64,
+    master_branch: String,
+    starred_at: String,
+    anonymous_access_enabled: bool,
+    code_search_index_status: RepositoryCodeSearchIndexStatus,
+}
+
+struct PullRequestHead {
+    label: String,
+    ref: String,
+    repo: Repository,
+    sha: String,
+    user: SimpleUser,
+}
+
+struct PullRequestBase {
+    label: String,
+    ref: String,
+    repo: Repository,
+    sha: String,
+    user: SimpleUser,
+}
+
+struct Link {
+    href: String,
+}
+
+struct PullRequestLinks {
+    comments: Link,
+    commits: Link,
+    statuses: Link,
+    html: Link,
+    issue: Link,
+    review_comments: Link,
+    review_comment: Link,
+    self: Link,
+}
+
+struct AutoMerge {
+    enabled_by: SimpleUser,
+    merge_method: String,
+    commit_title: String,
+    commit_message: String,
+}
+
 struct PullRequest {
     url: String,
     id: i64,
@@ -49,6 +308,80 @@ struct PullRequest {
     changed_files: i64,
 }
 
+struct TeamPermissions {
+    pull: bool,
+    triage: bool,
+    push: bool,
+    maintain: bool,
+    admin: bool,
+}
+
+struct NullableTeamSimple {
+    id: i64,
+    node_id: String,
+    url: String,
+    members_url: String,
+    name: String,
+    description: Option<String>,
+    permission: String,
+    privacy: String,
+    notification_setting: String,
+    html_url: String,
+    repositories_url: String,
+    slug: String,
+    ldap_dn: String,
+    type: String,
+    organization_id: i64,
+    enterprise_id: i64,
+}
+
+struct Team {
+    id: i64,
+    node_id: String,
+    name: String,
+    slug: String,
+    description: Option<String>,
+    privacy: String,
+    notification_setting: String,
+    permission: String,
+    permissions: TeamPermissions,
+    url: String,
+    html_url: String,
+    members_url: String,
+    repositories_url: String,
+    type: String,
+    organization_id: i64,
+    enterprise_id: i64,
+    parent: Option<NullableTeamSimple>,
+}
+
+struct PullRequestSimpleHead {
+    label: String,
+    ref: String,
+    repo: Repository,
+    sha: String,
+    user: Option<NullableSimpleUser>,
+}
+
+struct PullRequestSimpleBase {
+    label: String,
+    ref: String,
+    repo: Repository,
+    sha: String,
+    user: Option<NullableSimpleUser>,
+}
+
+struct PullRequestSimpleLinks {
+    comments: Link,
+    commits: Link,
+    statuses: Link,
+    html: Link,
+    issue: Link,
+    review_comments: Link,
+    review_comment: Link,
+    self: Link,
+}
+
 struct PullRequestSimple {
     url: String,
     id: i64,
@@ -86,6 +419,30 @@ struct PullRequestSimple {
     author_association: String,
     auto_merge: Option<AutoMerge>,
     draft: bool,
+}
+
+struct PullRequestMinimalHeadRepo {
+    id: i64,
+    url: String,
+    name: String,
+}
+
+struct PullRequestMinimalHead {
+    ref: String,
+    sha: String,
+    repo: PullRequestMinimalHeadRepo,
+}
+
+struct PullRequestMinimalBaseRepo {
+    id: i64,
+    url: String,
+    name: String,
+}
+
+struct PullRequestMinimalBase {
+    ref: String,
+    sha: String,
+    repo: PullRequestMinimalBaseRepo,
 }
 
 struct PullRequestMinimal {

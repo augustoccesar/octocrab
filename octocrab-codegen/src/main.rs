@@ -1,4 +1,4 @@
-use std::{fs, io::Write};
+use std::{collections::HashSet, fs, io::Write};
 
 use indexmap::IndexMap;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
@@ -16,60 +16,30 @@ pub fn parse() {
     let components = openapi
         .components
         .expect("GitHub OpenAPI spec should have components");
-    let mut schemas = Vec::new();
+
+    let mut output = codegen::Scope::new();
+    let mut generated_types = HashSet::new();
 
     for allowed_schema_name in ALLOWED_SCHEMAS {
-        match components.schemas.get(allowed_schema_name) {
-            Some(ReferenceOr::Item(schema)) => {
-                if schema.schema_data.title.is_none() {
-                    panic!("Expect schema to have a title");
-                }
-
-                schemas.push(schema)
-            }
+        let schema = match components.schemas.get(allowed_schema_name) {
+            Some(ReferenceOr::Item(schema)) => schema,
             Some(ReferenceOr::Reference { reference: _ }) => {
                 panic!("Base allowed schema should not be a reference")
             }
             None => panic!("Did not find allowed schema '{allowed_schema_name}' in schemas"),
-        }
-    }
+        };
 
-    let mut output = codegen::Scope::new();
-
-    for schema in &schemas {
-        let name: String = schema
-            .schema_data
-            .title
-            .as_ref()
-            .unwrap()
-            .split(" ")
-            .collect();
+        let name = schema_name_as_type(allowed_schema_name);
 
         log::debug!("Parsing schema for {name}");
 
-        match &schema.schema_kind {
-            SchemaKind::Type(ty) => match ty {
-                Type::Object(object_type) => {
-                    let mut struct_def = codegen::Struct::new(&name);
-
-                    for (property_name, property) in &object_type.properties {
-                        log::debug!("Parsing property '{property_name}'");
-
-                        struct_def.push_field(resolve_field(
-                            &mut output,
-                            &components.schemas,
-                            &name,
-                            &property_name,
-                            &property,
-                        ));
-                    }
-
-                    output.push_struct(struct_def);
-                }
-                _ => todo!(),
-            },
-            _ => todo!(),
-        }
+        ensure_schema_type(
+            &mut output,
+            &components.schemas,
+            &mut generated_types,
+            &name,
+            schema,
+        );
     }
 
     // TODO(@augustoccesar)[2026-05-27]: Have the target be configurable
@@ -83,58 +53,104 @@ pub fn parse() {
     file.write_all(output.to_string().as_bytes()).unwrap();
 }
 
+fn ensure_schema_type(
+    output: &mut codegen::Scope,
+    schemas: &IndexMap<String, ReferenceOr<Schema>>,
+    generated_types: &mut HashSet<String>,
+    type_name: &str,
+    schema: &Schema,
+) {
+    if generated_types.contains(type_name) {
+        return;
+    }
+
+    let SchemaKind::Type(Type::Object(object_type)) = &schema.schema_kind else {
+        return;
+    };
+
+    generated_types.insert(type_name.to_string());
+
+    let mut struct_def = codegen::Struct::new(type_name);
+
+    for (property_name, property) in &object_type.properties {
+        log::debug!("Parsing property '{property_name}' of type '{type_name}'");
+
+        struct_def.push_field(resolve_field(
+            output,
+            schemas,
+            generated_types,
+            type_name,
+            property_name,
+            property,
+        ));
+    }
+
+    output.push_struct(struct_def);
+}
+
+fn resolve_component_schema_reference<'a>(
+    schemas: &'a IndexMap<String, ReferenceOr<Schema>>,
+    reference: &'a str,
+) -> (&'a str, &'a Schema) {
+    if !reference.starts_with("#/components/schemas/") {
+        panic!("Expected field reference to start with #/components/schemas/");
+    }
+
+    let schema_name = reference
+        .split("#/components/schemas/")
+        .nth(1)
+        .expect("Schema reference should follow #/components/schemas/{name} format");
+
+    log::debug!("Looking up for schema named '{schema_name}' on the spec");
+
+    let schema = match schemas
+        .get(schema_name)
+        .expect("Referenced schema should exist on the spec")
+    {
+        ReferenceOr::Reference { reference: _ } => todo!("Reference of reference"),
+        ReferenceOr::Item(schema) => schema,
+    };
+
+    (schema_name, schema)
+}
+
 fn resolve_field(
     output: &mut codegen::Scope,
     schemas: &IndexMap<String, ReferenceOr<Schema>>,
+    generated_types: &mut HashSet<String>,
     parent_name: &str,
     property_name: &str,
     property: &ReferenceOr<Box<Schema>>,
 ) -> codegen::Field {
     let (field_name, schema): (String, &Schema) = match property {
         ReferenceOr::Reference { reference } => {
-            if !reference.starts_with("#/components/schemas/") {
-                panic!("Expected field reference to start with #/components/schemas/");
-            }
+            let (schema_name, schema) = resolve_component_schema_reference(schemas, reference);
 
-            let schema_name = reference
-                .split("#/components/schemas/")
-                .nth(1)
-                .expect("Schema reference should follow #/components/schemas/{name} format");
+            let field_name = schema_name_as_type(schema_name);
 
-            log::debug!("Looking up for schema named '{schema_name}' on the spec");
+            ensure_schema_type(output, schemas, generated_types, &field_name, schema);
 
-            let schema = match schemas
-                .get(schema_name)
-                .expect("Referenced schema should exist on the spec")
-            {
-                ReferenceOr::Reference { reference: _ } => todo!("Reference of reference"),
-                ReferenceOr::Item(schema) => schema,
-            };
-
-            (schema_name_as_type(schema_name), schema)
+            (field_name, schema)
         }
-        ReferenceOr::Item(schema) => (
-            format!(
+        ReferenceOr::Item(schema) => {
+            let field_name = format!(
                 "{}{}",
                 schema_name_as_type(parent_name),
                 schema_name_as_type(property_name)
-            ),
-            schema,
-        ),
+            );
+
+            ensure_schema_type(output, schemas, generated_types, &field_name, schema);
+
+            (field_name, schema)
+        }
     };
 
-    let mut property_type_name = String::new();
-
-    if schema.schema_data.nullable {
-        property_type_name.push_str("Option<");
-    }
-
-    match &schema.schema_kind {
+    let property_type_name = match &schema.schema_kind {
         SchemaKind::Type(schema_kind_type) => match schema_kind_type {
-            Type::String(string_type) => property_type_name.push_str("String"),
-            Type::Number(number_type) => todo!(),
-            Type::Integer(integer_type) => property_type_name.push_str("i64"),
-            Type::Object(object_type) => property_type_name.push_str(&field_name),
+            Type::String(_string_type) => "String".to_string(),
+            Type::Number(_number_type) => "f64".to_string(),
+            Type::Integer(_integer_type) => "i64".to_string(),
+            Type::Object(_object_type) => field_name,
             Type::Array(array_type) => {
                 let Some(items_schema) = &array_type.items else {
                     panic!("Expected array to have items definition");
@@ -142,56 +158,66 @@ fn resolve_field(
 
                 let (item_type_name, schema): (String, &Schema) = match items_schema {
                     ReferenceOr::Reference { reference } => {
-                        if !reference.starts_with("#/components/schemas/") {
-                            panic!("Expected field reference to start with #/components/schemas/");
-                        }
+                        let (schema_name, schema) =
+                            resolve_component_schema_reference(schemas, reference);
 
-                        let schema_name = reference.split("#/components/schemas/").nth(1).expect(
-                            "Schema reference should follow #/components/schemas/{name} format",
+                        let item_type_name = schema_name_as_type(schema_name);
+
+                        ensure_schema_type(
+                            output,
+                            schemas,
+                            generated_types,
+                            &item_type_name,
+                            schema,
                         );
 
-                        log::debug!("Looking up for schema named '{schema_name}' on the spec");
-
-                        let schema = match schemas
-                            .get(schema_name)
-                            .expect("Referenced schema should exist on the spec")
-                        {
-                            ReferenceOr::Reference { reference: _ } => {
-                                todo!("Reference of reference")
-                            }
-                            ReferenceOr::Item(schema) => schema,
-                        };
-
-                        (schema_name_as_type(schema_name), schema)
+                        (item_type_name, schema)
                     }
-                    ReferenceOr::Item(schema) => (
-                        format!("{}Item", schema_name_as_type(property_name)),
-                        schema,
-                    ),
+                    ReferenceOr::Item(schema) => {
+                        let item_type_name = format!("{}Item", schema_name_as_type(property_name));
+
+                        ensure_schema_type(
+                            output,
+                            schemas,
+                            generated_types,
+                            &item_type_name,
+                            schema,
+                        );
+
+                        (item_type_name, schema)
+                    }
                 };
 
-                let mut vec_item_type_name = String::new();
+                let vec_item_type_name = match &schema.schema_kind {
+                    SchemaKind::Type(schema_kind_type) => match schema_kind_type {
+                        Type::String(_string_type) => "String".to_string(),
+                        Type::Number(_number_type) => "f64".to_string(),
+                        Type::Integer(_integer_type) => "i64".to_string(),
+                        Type::Object(_object_type) => item_type_name,
+                        Type::Array(_array_type) => todo!(),
+                        Type::Boolean(_boolean_type) => "bool".to_string(),
+                    },
+                    _ => todo!(),
+                };
 
-                if schema.schema_data.nullable {
-                    vec_item_type_name.push_str("Option<");
-                }
+                let vec_item_type_name = if schema.schema_data.nullable {
+                    format!("Option<{vec_item_type_name}>")
+                } else {
+                    vec_item_type_name
+                };
 
-                vec_item_type_name.push_str(&item_type_name);
-
-                if schema.schema_data.nullable {
-                    vec_item_type_name.push_str(">");
-                }
-
-                property_type_name.push_str(&format!("Vec<{vec_item_type_name}>"));
+                format!("Vec<{vec_item_type_name}>")
             }
-            Type::Boolean(boolean_type) => property_type_name.push_str("bool"),
+            Type::Boolean(_boolean_type) => "bool".to_string(),
         },
         _ => todo!(),
-    }
+    };
 
-    if schema.schema_data.nullable {
-        property_type_name.push('>');
-    }
+    let property_type_name = if schema.schema_data.nullable {
+        format!("Option<{property_type_name}>")
+    } else {
+        property_type_name
+    };
 
     codegen::Field::new(property_name, codegen::Type::new(property_type_name))
 }
