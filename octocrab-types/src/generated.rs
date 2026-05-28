@@ -36,7 +36,7 @@ pub struct SimpleUser {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct LabelsItem {
+pub struct PullRequestLabelsItem {
     pub id: i64,
     pub node_id: String,
     pub url: String,
@@ -479,7 +479,7 @@ pub struct PullRequest {
     /// A GitHub user.
     pub user: SimpleUser,
     pub body: Option<String>,
-    pub labels: Vec<LabelsItem>,
+    pub labels: Vec<PullRequestLabelsItem>,
     /// A collection of related issues and pull requests.
     pub milestone: Option<NullableMilestone>,
     pub active_lock_reason: Option<String>,
@@ -516,6 +516,17 @@ pub struct PullRequest {
     pub additions: i64,
     pub deletions: i64,
     pub changed_files: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PullRequestSimpleLabelsItem {
+    pub id: i64,
+    pub node_id: String,
+    pub url: String,
+    pub name: String,
+    pub description: String,
+    pub color: String,
+    pub default: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -687,7 +698,7 @@ pub struct PullRequestSimple {
     /// A GitHub user.
     pub user: Option<NullableSimpleUser>,
     pub body: Option<String>,
-    pub labels: Vec<LabelsItem>,
+    pub labels: Vec<PullRequestSimpleLabelsItem>,
     /// A collection of related issues and pull requests.
     pub milestone: Option<NullableMilestone>,
     pub active_lock_reason: Option<String>,

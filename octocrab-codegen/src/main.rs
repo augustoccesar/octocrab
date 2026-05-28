@@ -254,7 +254,8 @@ fn build_field(
                         (item_type_name, schema)
                     }
                     ReferenceOr::Item(schema) => {
-                        let item_type_name = format!("{}Item", to_pascal_case(property_name));
+                        let item_type_name =
+                            format!("{}{}Item", parent_name, to_pascal_case(property_name));
 
                         ensure_struct(output, schemas, generated_types, &item_type_name, schema);
 
