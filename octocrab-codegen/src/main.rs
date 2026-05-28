@@ -1,7 +1,42 @@
-use std::{collections::HashSet, fs, io::Write};
+use std::{collections::HashSet, fs, path::PathBuf};
 
+use clap::Parser;
 use indexmap::IndexMap;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
+
+#[derive(Parser, Debug)]
+#[command(about = "Generate types from a GitHub OpenAPI spec")]
+struct Cli {
+    /// Path to the OpenAPI spec JSON file.
+    #[arg(short, long)]
+    input: PathBuf,
+
+    /// Path where the generated Rust file is written. If not present, the output is written to stdout
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+}
+
+fn main() {
+    env_logger::init();
+
+    let cli = Cli::parse();
+
+    let spec = fs::read_to_string(&cli.input)
+        .unwrap_or_else(|err| panic!("Failed to read spec at {}: {err}", cli.input.display()));
+
+    let generated = generate(&spec);
+
+    match &cli.output {
+        Some(output_path) => {
+            fs::write(output_path, generated).unwrap_or_else(|err| {
+                panic!("Failed to write output to {}: {err}", output_path.display());
+            });
+        }
+        None => {
+            println!("{generated}");
+        }
+    }
+}
 
 // TODO(@augustoccesar)[2026-05-28]: Scope down which schemas we want to handle for now.
 //  I guess ideally eventually we should do them all, but to make this more incremental,
@@ -17,9 +52,8 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
 
 const RESERVED_FIELD_NAMES: [&str; 3] = ["ref", "type", "self"];
 
-pub fn generate() {
-    let data = include_str!("../api.github.com.2022-11-28.json");
-    let openapi: OpenAPI = serde_json::from_str(data).expect("Could not deserialize input");
+fn generate(spec: &str) -> String {
+    let openapi: OpenAPI = serde_json::from_str(spec).expect("Could not deserialize input");
 
     let components = openapi
         .components
@@ -53,15 +87,7 @@ pub fn generate() {
         );
     }
 
-    // TODO(@augustoccesar)[2026-05-27]: Have the target be configurable
-    let mut file = fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open("../octocrab-types/src/generated.rs")
-        .unwrap();
-
-    file.write_all(output.to_string().as_bytes()).unwrap();
+    output.to_string()
 }
 
 fn ensure_struct(
@@ -345,12 +371,6 @@ fn escape_reserved_name(field_name: &str) -> Option<String> {
     } else {
         None
     }
-}
-
-fn main() {
-    env_logger::init();
-
-    generate();
 }
 
 #[cfg(test)]
