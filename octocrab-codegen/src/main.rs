@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet, fs, io::Write};
+use std::{collections::HashSet, fs, io::Write};
 
 use indexmap::IndexMap;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
@@ -76,9 +76,11 @@ fn ensure_schema_type(
     generated_types.insert(type_name.to_string());
 
     let mut struct_def = codegen::Struct::new(type_name);
+    struct_def.vis("pub");
     struct_def
         .derive("Debug")
         .derive("Clone")
+        .derive("PartialEq")
         .derive("Serialize")
         .derive("Deserialize");
 
@@ -111,9 +113,11 @@ fn ensure_enum_type(
     generated_types.insert(type_name.to_string());
 
     let mut enum_def = codegen::Enum::new(type_name);
+    enum_def.vis("pub");
     enum_def
         .derive("Debug")
         .derive("Clone")
+        .derive("PartialEq")
         .derive("Serialize")
         .derive("Deserialize");
 
