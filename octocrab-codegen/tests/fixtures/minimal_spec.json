@@ -1,0 +1,77 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Minimal Test Spec",
+    "version": "1.0.0",
+    "description": "Covers each feature the codegen currently supports."
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "simple-user": {
+        "type": "object",
+        "properties": {
+          "login": { "type": "string" },
+          "id": { "type": "integer" }
+        }
+      },
+      "pull-request-minimal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier."
+          },
+          "url": { "type": "string" }
+        }
+      },
+      "pull-request-simple": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "score": { "type": "number" },
+          "draft": { "type": "boolean" },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": ["OPEN", "CLOSED"],
+            "description": "The state of the pull request."
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" }
+              }
+            }
+          },
+          "type": { "type": "string" }
+        }
+      },
+      "pull-request": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "head": {
+            "type": "object",
+            "properties": {
+              "ref": { "type": "string" },
+              "sha": { "type": "string" }
+            }
+          },
+          "user": { "$ref": "#/components/schemas/simple-user" },
+          "merged_by": { "$ref": "#/components/schemas/simple-user" }
+        }
+      }
+    }
+  }
+}

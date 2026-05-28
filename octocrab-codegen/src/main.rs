@@ -376,7 +376,15 @@ fn escape_reserved_name(field_name: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::to_pascal_case;
+    use crate::{generate, to_pascal_case};
+
+    #[test]
+    fn generate_matches_minimal_spec_snapshot() {
+        let spec = include_str!("../tests/fixtures/minimal_spec.json");
+        let expected = include_str!("../tests/fixtures/expected_output.rs");
+
+        assert_eq!(expected, generate(spec));
+    }
 
     #[test]
     fn to_pascal_case_from_kebab() {
