@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, io::Write};
+use std::{borrow::Cow, collections::HashSet, fs, io::Write};
 
 use indexmap::IndexMap;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
@@ -9,6 +9,8 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
     "pull-request-minimal",
 ];
 
+const PROTECTED_NAMES: [&str; 3] = ["ref", "type", "self"];
+
 pub fn parse() {
     let data = include_str!("../api.github.com.2022-11-28.json");
     let openapi: OpenAPI = serde_json::from_str(data).expect("Could not deserialize input");
@@ -18,6 +20,9 @@ pub fn parse() {
         .expect("GitHub OpenAPI spec should have components");
 
     let mut output = codegen::Scope::new();
+    output.import("serde", "Serialize");
+    output.import("serde", "Deserialize");
+
     let mut generated_types = HashSet::new();
 
     for allowed_schema_name in ALLOWED_SCHEMAS {
@@ -71,6 +76,11 @@ fn ensure_schema_type(
     generated_types.insert(type_name.to_string());
 
     let mut struct_def = codegen::Struct::new(type_name);
+    struct_def
+        .derive("Debug")
+        .derive("Clone")
+        .derive("Serialize")
+        .derive("Deserialize");
 
     for (property_name, property) in &object_type.properties {
         log::debug!("Parsing property '{property_name}' of type '{type_name}'");
@@ -101,9 +111,15 @@ fn ensure_enum_type(
     generated_types.insert(type_name.to_string());
 
     let mut enum_def = codegen::Enum::new(type_name);
+    enum_def
+        .derive("Debug")
+        .derive("Clone")
+        .derive("Serialize")
+        .derive("Deserialize");
 
     for option in options.iter().filter_map(|opt| opt.as_deref()) {
         let variant = codegen::Variant::new(schema_name_as_type(&option));
+
         enum_def.push_variant(variant);
     }
 
@@ -260,7 +276,16 @@ fn resolve_field(
         property_type_name
     };
 
-    let mut field = codegen::Field::new(property_name, codegen::Type::new(property_type_name));
+    let sanitized_property_name = sanitize_field_name(property_name);
+    let mut field = codegen::Field::new(
+        sanitized_property_name.as_deref().unwrap_or(property_name),
+        codegen::Type::new(property_type_name),
+    );
+
+    if sanitized_property_name.is_some() {
+        field.annotation(format!(r#"#[serde(rename = "{property_name}")]"#));
+    }
+
     if let Some(description) = &schema.schema_data.description {
         field.doc(description);
     }
@@ -279,6 +304,14 @@ fn schema_name_as_type(schema_name: &str) -> String {
             }
         })
         .collect()
+}
+
+fn sanitize_field_name(field_name: &str) -> Option<String> {
+    if PROTECTED_NAMES.contains(&field_name) {
+        Some(format!("{field_name}_"))
+    } else {
+        None
+    }
 }
 
 fn main() {

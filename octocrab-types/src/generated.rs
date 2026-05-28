@@ -1,8 +1,12 @@
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum PullRequestState {
     Open,
     Closed,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct SimpleUser {
     name: Option<String>,
     email: Option<String>,
@@ -22,12 +26,14 @@ struct SimpleUser {
     repos_url: String,
     events_url: String,
     received_events_url: String,
-    type: String,
+    #[serde(rename = "type")]
+    type_: String,
     site_admin: bool,
     starred_at: String,
     user_view_type: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct LabelsItem {
     id: i64,
     node_id: String,
@@ -38,11 +44,13 @@ struct LabelsItem {
     default: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum NullableMilestoneState {
     Open,
     Closed,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct NullableSimpleUser {
     name: Option<String>,
     email: Option<String>,
@@ -62,12 +70,14 @@ struct NullableSimpleUser {
     repos_url: String,
     events_url: String,
     received_events_url: String,
-    type: String,
+    #[serde(rename = "type")]
+    type_: String,
     site_admin: bool,
     starred_at: String,
     user_view_type: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct NullableMilestone {
     url: String,
     html_url: String,
@@ -91,11 +101,13 @@ struct NullableMilestone {
     due_on: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum TeamSimpleType {
     Enterprise,
     Organization,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct TeamSimple {
     /// Unique identifier of the team
     id: i64,
@@ -119,13 +131,15 @@ struct TeamSimple {
     /// Distinguished Name (DN) that team maps to within LDAP environment
     ldap_dn: String,
     /// The ownership type of the team
-    type: TeamSimpleType,
+    #[serde(rename = "type")]
+    type_: TeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
     enterprise_id: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct NullableLicenseSimple {
     key: String,
     name: String,
@@ -135,6 +149,7 @@ struct NullableLicenseSimple {
     html_url: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct RepositoryPermissions {
     admin: bool,
     pull: bool,
@@ -143,38 +158,45 @@ struct RepositoryPermissions {
     maintain: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum RepositoryPullRequestCreationPolicy {
     All,
     CollaboratorsOnly,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum RepositorySquashMergeCommitTitle {
     PRTITLE,
     COMMITORPRTITLE,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum RepositorySquashMergeCommitMessage {
     PRBODY,
     COMMITMESSAGES,
     BLANK,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum RepositoryMergeCommitTitle {
     PRTITLE,
     MERGEMESSAGE,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum RepositoryMergeCommitMessage {
     PRBODY,
     PRTITLE,
     BLANK,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct RepositoryCodeSearchIndexStatus {
     lexical_search_ok: bool,
     lexical_commit_sha: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Repository {
     /// Unique identifier of the repository
     id: i64,
@@ -323,9 +345,11 @@ struct Repository {
     code_search_index_status: RepositoryCodeSearchIndexStatus,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestHead {
     label: String,
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     /// A repository on GitHub.
     repo: Repository,
     sha: String,
@@ -333,9 +357,11 @@ struct PullRequestHead {
     user: SimpleUser,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestBase {
     label: String,
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     /// A repository on GitHub.
     repo: Repository,
     sha: String,
@@ -343,10 +369,12 @@ struct PullRequestBase {
     user: SimpleUser,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Link {
     href: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestLinks {
     /// Hypermedia Link
     comments: Link,
@@ -363,9 +391,11 @@ struct PullRequestLinks {
     /// Hypermedia Link
     review_comment: Link,
     /// Hypermedia Link
-    self: Link,
+    #[serde(rename = "self")]
+    self_: Link,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum PullRequestAuthorAssociation {
     COLLABORATOR,
     CONTRIBUTOR,
@@ -377,12 +407,14 @@ enum PullRequestAuthorAssociation {
     OWNER,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum AutoMergeMergeMethod {
     Merge,
     Squash,
     Rebase,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct AutoMerge {
     /// A GitHub user.
     enabled_by: SimpleUser,
@@ -394,6 +426,7 @@ struct AutoMerge {
     commit_message: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequest {
     url: String,
     id: i64,
@@ -456,6 +489,7 @@ struct PullRequest {
     changed_files: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct TeamPermissions {
     pull: bool,
     triage: bool,
@@ -464,16 +498,19 @@ struct TeamPermissions {
     admin: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum TeamType {
     Enterprise,
     Organization,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum NullableTeamSimpleType {
     Enterprise,
     Organization,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct NullableTeamSimple {
     /// Unique identifier of the team
     id: i64,
@@ -497,13 +534,15 @@ struct NullableTeamSimple {
     /// Distinguished Name (DN) that team maps to within LDAP environment
     ldap_dn: String,
     /// The ownership type of the team
-    type: NullableTeamSimpleType,
+    #[serde(rename = "type")]
+    type_: NullableTeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
     enterprise_id: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Team {
     id: i64,
     node_id: String,
@@ -519,7 +558,8 @@ struct Team {
     members_url: String,
     repositories_url: String,
     /// The ownership type of the team
-    type: TeamType,
+    #[serde(rename = "type")]
+    type_: TeamType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
@@ -528,9 +568,11 @@ struct Team {
     parent: Option<NullableTeamSimple>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestSimpleHead {
     label: String,
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     /// A repository on GitHub.
     repo: Repository,
     sha: String,
@@ -538,9 +580,11 @@ struct PullRequestSimpleHead {
     user: Option<NullableSimpleUser>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestSimpleBase {
     label: String,
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     /// A repository on GitHub.
     repo: Repository,
     sha: String,
@@ -548,6 +592,7 @@ struct PullRequestSimpleBase {
     user: Option<NullableSimpleUser>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestSimpleLinks {
     /// Hypermedia Link
     comments: Link,
@@ -564,9 +609,11 @@ struct PullRequestSimpleLinks {
     /// Hypermedia Link
     review_comment: Link,
     /// Hypermedia Link
-    self: Link,
+    #[serde(rename = "self")]
+    self_: Link,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum PullRequestSimpleAuthorAssociation {
     COLLABORATOR,
     CONTRIBUTOR,
@@ -578,6 +625,7 @@ enum PullRequestSimpleAuthorAssociation {
     OWNER,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestSimple {
     url: String,
     id: i64,
@@ -623,30 +671,37 @@ struct PullRequestSimple {
     draft: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestMinimalHeadRepo {
     id: i64,
     url: String,
     name: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestMinimalHead {
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     sha: String,
     repo: PullRequestMinimalHeadRepo,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestMinimalBaseRepo {
     id: i64,
     url: String,
     name: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestMinimalBase {
-    ref: String,
+    #[serde(rename = "ref")]
+    ref_: String,
     sha: String,
     repo: PullRequestMinimalBaseRepo,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequestMinimal {
     id: i64,
     number: i64,
