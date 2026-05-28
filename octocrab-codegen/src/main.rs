@@ -219,31 +219,18 @@ fn build_field(
 
                 let (item_type_name, schema): (String, &Schema) = match items_schema {
                     ReferenceOr::Reference { reference } => {
-                        let (schema_name, schema) =
-                            resolve_schema_ref(schemas, reference);
+                        let (schema_name, schema) = resolve_schema_ref(schemas, reference);
 
                         let item_type_name = to_pascal_case(schema_name);
 
-                        ensure_struct(
-                            output,
-                            schemas,
-                            generated_types,
-                            &item_type_name,
-                            schema,
-                        );
+                        ensure_struct(output, schemas, generated_types, &item_type_name, schema);
 
                         (item_type_name, schema)
                     }
                     ReferenceOr::Item(schema) => {
                         let item_type_name = format!("{}Item", to_pascal_case(property_name));
 
-                        ensure_struct(
-                            output,
-                            schemas,
-                            generated_types,
-                            &item_type_name,
-                            schema,
-                        );
+                        ensure_struct(output, schemas, generated_types, &item_type_name, schema);
 
                         (item_type_name, schema)
                     }
@@ -372,10 +359,7 @@ mod tests {
 
     #[test]
     fn to_pascal_case_from_kebab() {
-        assert_eq!(
-            "PullRequestSimple",
-            to_pascal_case("pull-request-simple")
-        );
+        assert_eq!("PullRequestSimple", to_pascal_case("pull-request-simple"));
     }
 
     #[test]
