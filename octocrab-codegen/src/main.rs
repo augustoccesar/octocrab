@@ -128,6 +128,8 @@ fn ensure_struct(
     for (property_name, property) in &object_type.properties {
         log::debug!("Parsing property '{property_name}' of type '{type_name}'");
 
+        let is_required = object_type.required.iter().any(|r| r == property_name);
+
         struct_def.push_field(build_field(
             output,
             schemas,
@@ -135,6 +137,7 @@ fn ensure_struct(
             type_name,
             property_name,
             property,
+            is_required,
         ));
     }
 
@@ -205,6 +208,7 @@ fn build_field(
     parent_name: &str,
     property_name: &str,
     property: &ReferenceOr<Box<Schema>>,
+    is_required: bool,
 ) -> codegen::Field {
     let (field_name, schema): (String, &Schema) = match property {
         ReferenceOr::Reference { reference } => {
@@ -331,7 +335,7 @@ fn build_field(
         }
     };
 
-    let property_type_name = if schema.schema_data.nullable {
+    let property_type_name = if schema.schema_data.nullable || !is_required {
         format!("Option<{property_type_name}>")
     } else {
         property_type_name
