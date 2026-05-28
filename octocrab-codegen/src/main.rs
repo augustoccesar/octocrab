@@ -3,6 +3,12 @@ use std::{collections::HashSet, fs, io::Write};
 use indexmap::IndexMap;
 use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
 
+// TODO(@augustoccesar)[2026-05-28]: Scope down which schemas we want to handle for now.
+//  I guess ideally eventually we should do them all, but to make this more incremental,
+//  we can use this mechanism so that we can tackle the most important ones first without
+//  spiraling into a lot of details of different parts of the GitHub OpenAPI schema.
+//  For example, the schemas for webhooks are quite complicated, and we might want to keep
+//  that "manual" for a while.
 const ALLOWED_SCHEMAS: [&str; 3] = [
     "pull-request",
     "pull-request-simple",
