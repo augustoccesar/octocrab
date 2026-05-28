@@ -122,7 +122,8 @@ fn ensure_enum_type(
         .derive("Deserialize");
 
     for option in options.iter().filter_map(|opt| opt.as_deref()) {
-        let variant = codegen::Variant::new(schema_name_as_type(&option));
+        let mut variant = codegen::Variant::new(schema_name_as_type(option));
+        variant.annotation(format!(r#"#[serde(rename = "{option}")]"#));
 
         enum_def.push_variant(variant);
     }
@@ -175,11 +176,7 @@ fn resolve_field(
             (field_name, schema)
         }
         ReferenceOr::Item(schema) => {
-            let field_name = format!(
-                "{}{}",
-                schema_name_as_type(parent_name),
-                schema_name_as_type(property_name)
-            );
+            let field_name = format!("{}{}", parent_name, schema_name_as_type(property_name));
 
             ensure_schema_type(output, schemas, generated_types, &field_name, schema);
 
@@ -190,12 +187,9 @@ fn resolve_field(
     let property_type_name = match &schema.schema_kind {
         SchemaKind::Type(schema_kind_type) => match schema_kind_type {
             Type::String(string_type) => {
-                if string_type.enumeration.len() > 0 {
-                    let enum_type_name = format!(
-                        "{}{}",
-                        schema_name_as_type(parent_name),
-                        schema_name_as_type(property_name)
-                    );
+                if !string_type.enumeration.is_empty() {
+                    let enum_type_name =
+                        format!("{}{}", parent_name, schema_name_as_type(property_name));
 
                     ensure_enum_type(
                         output,
@@ -285,6 +279,7 @@ fn resolve_field(
         sanitized_property_name.as_deref().unwrap_or(property_name),
         codegen::Type::new(property_type_name),
     );
+    field.vis("pub");
 
     if sanitized_property_name.is_some() {
         field.annotation(format!(r#"#[serde(rename = "{property_name}")]"#));
@@ -302,10 +297,17 @@ fn schema_name_as_type(schema_name: &str) -> String {
         .split(['-', '_'])
         .map(|part| {
             let mut chars = part.chars();
-            match chars.next() {
-                Some(first_char) => first_char.to_uppercase().chain(chars).collect(),
-                None => String::new(),
-            }
+            let Some(first_char) = chars.next() else {
+                return String::new();
+            };
+
+            let rest: String = if part.chars().all(|c| !c.is_lowercase()) {
+                chars.as_str().to_lowercase()
+            } else {
+                chars.collect()
+            };
+
+            first_char.to_uppercase().chain(rest.chars()).collect()
         })
         .collect()
 }
@@ -329,7 +331,29 @@ mod tests {
     use crate::schema_name_as_type;
 
     #[test]
-    fn schema_name_as_type_works() {
-        assert_eq!("SomeName", schema_name_as_type("some-name"));
+    fn schema_name_as_type_kebab_case() {
+        assert_eq!(
+            "PullRequestSimple",
+            schema_name_as_type("pull-request-simple")
+        );
+    }
+
+    #[test]
+    fn schema_name_as_type_snake_case() {
+        assert_eq!(
+            "PullRequestCreationPolicy",
+            schema_name_as_type("pull_request_creation_policy")
+        );
+    }
+
+    #[test]
+    fn schema_name_as_type_screaming_snake_case() {
+        assert_eq!("PrTitle", schema_name_as_type("PR_TITLE"));
+        assert_eq!("CommitOrPrTitle", schema_name_as_type("COMMIT_OR_PR_TITLE"));
+    }
+
+    #[test]
+    fn schema_name_as_type_preserves_pascal_case() {
+        assert_eq!("PullRequest", schema_name_as_type("PullRequest"));
     }
 }
