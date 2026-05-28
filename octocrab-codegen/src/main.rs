@@ -60,8 +60,8 @@ fn generate(spec: &str) -> String {
         .expect("GitHub OpenAPI spec should have components");
 
     let mut output = codegen::Scope::new();
-    output.import("serde", "Serialize");
     output.import("serde", "Deserialize");
+    output.import("serde", "Serialize");
 
     let mut generated_types = HashSet::new();
 
