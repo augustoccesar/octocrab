@@ -14,6 +14,10 @@ struct Cli {
     /// Path where the generated Rust file is written. If not present, the output is written to stdout
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Comma-separated schema names to generate. Defaults to the built-in allowlist.
+    #[arg(short, long, value_delimiter = ',')]
+    schemas: Option<Vec<String>>,
 }
 
 fn main() {
@@ -24,7 +28,12 @@ fn main() {
     let spec = fs::read_to_string(&cli.input)
         .unwrap_or_else(|err| panic!("Failed to read spec at {}: {err}", cli.input.display()));
 
-    let generated = generate(&spec);
+    let schemas: Vec<&str> = match &cli.schemas {
+        Some(s) => s.iter().map(String::as_str).collect(),
+        None => ALLOWED_SCHEMAS.to_vec(),
+    };
+
+    let generated = generate(&spec, &schemas);
 
     match &cli.output {
         Some(output_path) => {
@@ -52,7 +61,7 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
 
 const RESERVED_FIELD_NAMES: [&str; 3] = ["ref", "type", "self"];
 
-fn generate(spec: &str) -> String {
+fn generate(spec: &str, allowed_schemas: &[&str]) -> String {
     let openapi: OpenAPI = serde_json::from_str(spec).expect("Could not deserialize input");
 
     let components = openapi
@@ -65,8 +74,8 @@ fn generate(spec: &str) -> String {
 
     let mut generated_types = HashSet::new();
 
-    for allowed_schema_name in ALLOWED_SCHEMAS {
-        let schema = match components.schemas.get(allowed_schema_name) {
+    for allowed_schema_name in allowed_schemas {
+        let schema = match components.schemas.get(*allowed_schema_name) {
             Some(ReferenceOr::Item(schema)) => schema,
             Some(ReferenceOr::Reference { reference: _ }) => {
                 panic!("Base allowed schema should not be a reference")
@@ -382,8 +391,9 @@ mod tests {
     fn generate_matches_minimal_spec_snapshot() {
         let spec = include_str!("../tests/fixtures/minimal_spec.json");
         let expected = include_str!("../tests/fixtures/expected_output.rs");
+        let allowed = ["pull-request", "pull-request-simple", "pull-request-minimal"];
 
-        assert_eq!(expected, generate(spec));
+        assert_eq!(expected, generate(spec, &allowed));
     }
 
     #[test]
