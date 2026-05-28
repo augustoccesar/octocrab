@@ -31,8 +31,8 @@ pub struct SimpleUser {
     #[serde(rename = "type")]
     pub type_: String,
     pub site_admin: bool,
-    pub starred_at: String,
-    pub user_view_type: String,
+    pub starred_at: Option<String>,
+    pub user_view_type: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -77,8 +77,8 @@ pub struct NullableSimpleUser {
     #[serde(rename = "type")]
     pub type_: String,
     pub site_admin: bool,
-    pub starred_at: String,
-    pub user_view_type: String,
+    pub starred_at: Option<String>,
+    pub user_view_type: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -128,21 +128,21 @@ pub struct TeamSimple {
     /// Permission that the team will have for its repositories
     pub permission: String,
     /// The level of privacy this team should have
-    pub privacy: String,
+    pub privacy: Option<String>,
     /// The notification setting the team has set
-    pub notification_setting: String,
+    pub notification_setting: Option<String>,
     pub html_url: String,
     pub repositories_url: String,
     pub slug: String,
     /// Distinguished Name (DN) that team maps to within LDAP environment
-    pub ldap_dn: String,
+    pub ldap_dn: Option<String>,
     /// The ownership type of the team
     #[serde(rename = "type")]
     pub type_: TeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
-    pub organization_id: i64,
+    pub organization_id: Option<i64>,
     /// Unique identifier of the enterprise to which this team belongs
-    pub enterprise_id: i64,
+    pub enterprise_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -152,16 +152,16 @@ pub struct NullableLicenseSimple {
     pub url: Option<String>,
     pub spdx_id: Option<String>,
     pub node_id: String,
-    pub html_url: String,
+    pub html_url: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RepositoryPermissions {
     pub admin: bool,
     pub pull: bool,
-    pub triage: bool,
+    pub triage: Option<bool>,
     pub push: bool,
-    pub maintain: bool,
+    pub maintain: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -210,8 +210,8 @@ pub enum RepositoryMergeCommitMessage {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RepositoryCodeSearchIndexStatus {
-    pub lexical_search_ok: bool,
-    pub lexical_commit_sha: String,
+    pub lexical_search_ok: Option<bool>,
+    pub lexical_commit_sha: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -225,7 +225,7 @@ pub struct Repository {
     /// License Simple
     pub license: Option<NullableLicenseSimple>,
     pub forks: i64,
-    pub permissions: RepositoryPermissions,
+    pub permissions: Option<RepositoryPermissions>,
     /// A GitHub user.
     pub owner: SimpleUser,
     /// Whether the repository is private or public.
@@ -286,8 +286,8 @@ pub struct Repository {
     pub default_branch: String,
     pub open_issues_count: i64,
     /// Whether this repository acts as a template that can be used to generate new repositories.
-    pub is_template: bool,
-    pub topics: Vec<String>,
+    pub is_template: Option<bool>,
+    pub topics: Option<Vec<String>>,
     /// Whether issues are enabled.
     pub has_issues: bool,
     /// Whether projects are enabled.
@@ -298,69 +298,69 @@ pub struct Repository {
     /// Whether downloads are enabled.
     pub has_downloads: bool,
     /// Whether discussions are enabled.
-    pub has_discussions: bool,
+    pub has_discussions: Option<bool>,
     /// Whether pull requests are enabled.
-    pub has_pull_requests: bool,
+    pub has_pull_requests: Option<bool>,
     /// The policy controlling who can create pull requests: all or collaborators_only.
-    pub pull_request_creation_policy: RepositoryPullRequestCreationPolicy,
+    pub pull_request_creation_policy: Option<RepositoryPullRequestCreationPolicy>,
     /// Whether the repository is archived.
     pub archived: bool,
     /// Returns whether or not this repository disabled.
     pub disabled: bool,
     /// The repository visibility: public, private, or internal.
-    pub visibility: String,
+    pub visibility: Option<String>,
     pub pushed_at: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     /// Whether to allow rebase merges for pull requests.
-    pub allow_rebase_merge: bool,
-    pub temp_clone_token: String,
+    pub allow_rebase_merge: Option<bool>,
+    pub temp_clone_token: Option<String>,
     /// Whether to allow squash merges for pull requests.
-    pub allow_squash_merge: bool,
+    pub allow_squash_merge: Option<bool>,
     /// Whether to allow Auto-merge to be used on pull requests.
-    pub allow_auto_merge: bool,
+    pub allow_auto_merge: Option<bool>,
     /// Whether to delete head branches when pull requests are merged
-    pub delete_branch_on_merge: bool,
+    pub delete_branch_on_merge: Option<bool>,
     /// Whether or not a pull request head branch that is behind its base branch can always be updated even if it is not required to be up to date before merging.
-    pub allow_update_branch: bool,
+    pub allow_update_branch: Option<bool>,
     /// Whether a squash merge commit can use the pull request title as default. **This property is closing down. Please use `squash_merge_commit_title` instead.
-    pub use_squash_pr_title_as_default: bool,
+    pub use_squash_pr_title_as_default: Option<bool>,
     /// The default value for a squash merge commit title:
     ///
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `COMMIT_OR_PR_TITLE` - default to the commit's title (if only one commit) or the pull request's title (when more than one commit).
-    pub squash_merge_commit_title: RepositorySquashMergeCommitTitle,
+    pub squash_merge_commit_title: Option<RepositorySquashMergeCommitTitle>,
     /// The default value for a squash merge commit message:
     ///
     /// - `PR_BODY` - default to the pull request's body.
     /// - `COMMIT_MESSAGES` - default to the branch's commit messages.
     /// - `BLANK` - default to a blank commit message.
-    pub squash_merge_commit_message: RepositorySquashMergeCommitMessage,
+    pub squash_merge_commit_message: Option<RepositorySquashMergeCommitMessage>,
     /// The default value for a merge commit title.
     ///
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `MERGE_MESSAGE` - default to the classic title for a merge message (e.g., Merge pull request #123 from branch-name).
-    pub merge_commit_title: RepositoryMergeCommitTitle,
+    pub merge_commit_title: Option<RepositoryMergeCommitTitle>,
     /// The default value for a merge commit message.
     ///
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `PR_BODY` - default to the pull request's body.
     /// - `BLANK` - default to a blank commit message.
-    pub merge_commit_message: RepositoryMergeCommitMessage,
+    pub merge_commit_message: Option<RepositoryMergeCommitMessage>,
     /// Whether to allow merge commits for pull requests.
-    pub allow_merge_commit: bool,
+    pub allow_merge_commit: Option<bool>,
     /// Whether to allow forking this repo
-    pub allow_forking: bool,
+    pub allow_forking: Option<bool>,
     /// Whether to require contributors to sign off on web-based commits
-    pub web_commit_signoff_required: bool,
+    pub web_commit_signoff_required: Option<bool>,
     pub open_issues: i64,
     pub watchers: i64,
-    pub master_branch: String,
-    pub starred_at: String,
+    pub master_branch: Option<String>,
+    pub starred_at: Option<String>,
     /// Whether anonymous git access is enabled for this repository
-    pub anonymous_access_enabled: bool,
+    pub anonymous_access_enabled: Option<bool>,
     /// The status of the code search index for this repository
-    pub code_search_index_status: RepositoryCodeSearchIndexStatus,
+    pub code_search_index_status: Option<RepositoryCodeSearchIndexStatus>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -490,9 +490,9 @@ pub struct PullRequest {
     pub merge_commit_sha: Option<String>,
     /// A GitHub user.
     pub assignee: Option<NullableSimpleUser>,
-    pub assignees: Vec<SimpleUser>,
-    pub requested_reviewers: Vec<SimpleUser>,
-    pub requested_teams: Vec<TeamSimple>,
+    pub assignees: Option<Vec<SimpleUser>>,
+    pub requested_reviewers: Option<Vec<SimpleUser>>,
+    pub requested_teams: Option<Vec<TeamSimple>>,
     pub head: PullRequestHead,
     pub base: PullRequestBase,
     pub _links: PullRequestLinks,
@@ -501,7 +501,7 @@ pub struct PullRequest {
     /// The status of auto merging a pull request.
     pub auto_merge: Option<AutoMerge>,
     /// Indicates whether or not the pull request is a draft.
-    pub draft: bool,
+    pub draft: Option<bool>,
     pub merged: bool,
     pub mergeable: Option<bool>,
     pub rebaseable: Option<bool>,
@@ -569,21 +569,21 @@ pub struct NullableTeamSimple {
     /// Permission that the team will have for its repositories
     pub permission: String,
     /// The level of privacy this team should have
-    pub privacy: String,
+    pub privacy: Option<String>,
     /// The notification setting the team has set
-    pub notification_setting: String,
+    pub notification_setting: Option<String>,
     pub html_url: String,
     pub repositories_url: String,
     pub slug: String,
     /// Distinguished Name (DN) that team maps to within LDAP environment
-    pub ldap_dn: String,
+    pub ldap_dn: Option<String>,
     /// The ownership type of the team
     #[serde(rename = "type")]
     pub type_: NullableTeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
-    pub organization_id: i64,
+    pub organization_id: Option<i64>,
     /// Unique identifier of the enterprise to which this team belongs
-    pub enterprise_id: i64,
+    pub enterprise_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -593,10 +593,10 @@ pub struct Team {
     pub name: String,
     pub slug: String,
     pub description: Option<String>,
-    pub privacy: String,
-    pub notification_setting: String,
+    pub privacy: Option<String>,
+    pub notification_setting: Option<String>,
     pub permission: String,
-    pub permissions: TeamPermissions,
+    pub permissions: Option<TeamPermissions>,
     pub url: String,
     pub html_url: String,
     pub members_url: String,
@@ -605,9 +605,9 @@ pub struct Team {
     #[serde(rename = "type")]
     pub type_: TeamType,
     /// Unique identifier of the organization to which this team belongs
-    pub organization_id: i64,
+    pub organization_id: Option<i64>,
     /// Unique identifier of the enterprise to which this team belongs
-    pub enterprise_id: i64,
+    pub enterprise_id: Option<i64>,
     /// Groups of organization members that gives permissions on specified repositories.
     pub parent: Option<NullableTeamSimple>,
 }
@@ -709,9 +709,9 @@ pub struct PullRequestSimple {
     pub merge_commit_sha: Option<String>,
     /// A GitHub user.
     pub assignee: Option<NullableSimpleUser>,
-    pub assignees: Vec<SimpleUser>,
-    pub requested_reviewers: Vec<SimpleUser>,
-    pub requested_teams: Vec<Team>,
+    pub assignees: Option<Vec<SimpleUser>>,
+    pub requested_reviewers: Option<Vec<SimpleUser>>,
+    pub requested_teams: Option<Vec<Team>>,
     pub head: PullRequestSimpleHead,
     pub base: PullRequestSimpleBase,
     pub _links: PullRequestSimpleLinks,
@@ -720,7 +720,7 @@ pub struct PullRequestSimple {
     /// The status of auto merging a pull request.
     pub auto_merge: Option<AutoMerge>,
     /// Indicates whether or not the pull request is a draft.
-    pub draft: bool,
+    pub draft: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -761,3 +761,5 @@ pub struct PullRequestMinimal {
     pub head: PullRequestMinimalHead,
     pub base: PullRequestMinimalBase,
 }
+
+pub type PullsGetResponse = PullRequest;

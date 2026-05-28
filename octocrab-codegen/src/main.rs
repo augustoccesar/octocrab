@@ -2,7 +2,10 @@ use std::{borrow::Cow, collections::HashSet, fs, path::PathBuf};
 
 use clap::Parser;
 use indexmap::IndexMap;
-use openapiv3::{OpenAPI, ReferenceOr, Schema, SchemaKind, Type};
+use openapiv3::{
+    OpenAPI, Operation, PathItem, ReferenceOr, Response, Responses, Schema, SchemaKind, StatusCode,
+    Type,
+};
 
 #[derive(Parser, Debug)]
 #[command(about = "Generate types from a GitHub OpenAPI spec")]
@@ -18,6 +21,10 @@ struct Cli {
     /// Comma-separated schema names to generate. Defaults to the built-in allowlist.
     #[arg(short, long, value_delimiter = ',')]
     schemas: Option<Vec<String>>,
+
+    /// Comma-separated operationIds to generate request/response types for. Defaults to the built-in allowlist.
+    #[arg(short = 'O', long, value_delimiter = ',')]
+    operations: Option<Vec<String>>,
 }
 
 fn main() {
@@ -33,7 +40,12 @@ fn main() {
         None => ALLOWED_SCHEMAS.to_vec(),
     };
 
-    let generated = generate(&spec, &schemas);
+    let operations: Vec<&str> = match &cli.operations {
+        Some(o) => o.iter().map(String::as_str).collect(),
+        None => ALLOWED_OPERATIONS.to_vec(),
+    };
+
+    let generated = generate(&spec, &schemas, &operations);
 
     match &cli.output {
         Some(output_path) => {
@@ -59,13 +71,16 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
     "pull-request-minimal",
 ];
 
+const ALLOWED_OPERATIONS: [&str; 1] = ["pulls/get"];
+
 const RESERVED_FIELD_NAMES: [&str; 3] = ["ref", "type", "self"];
 
-fn generate(spec: &str, allowed_schemas: &[&str]) -> String {
+fn generate(spec: &str, allowed_schemas: &[&str], allowed_operations: &[&str]) -> String {
     let openapi: OpenAPI = serde_json::from_str(spec).expect("Could not deserialize input");
 
     let components = openapi
         .components
+        .as_ref()
         .expect("GitHub OpenAPI spec should have components");
 
     let mut output = codegen::Scope::new();
@@ -96,7 +111,152 @@ fn generate(spec: &str, allowed_schemas: &[&str]) -> String {
         );
     }
 
+    for operation_id in allowed_operations {
+        let operation = find_operation(&openapi, operation_id)
+            .unwrap_or_else(|| panic!("Did not find operation '{operation_id}'"));
+
+        log::debug!("Parsing operation {operation_id}");
+
+        process_operation(
+            &mut output,
+            &components.schemas,
+            &mut generated_types,
+            operation_id,
+            operation,
+        );
+    }
+
     output.to_string()
+}
+
+fn find_operation<'a>(openapi: &'a OpenAPI, operation_id: &str) -> Option<&'a Operation> {
+    for (_, path_item) in &openapi.paths.paths {
+        let ReferenceOr::Item(path_item) = path_item else {
+            continue;
+        };
+
+        for op in path_item_operations(path_item) {
+            if op.operation_id.as_deref() == Some(operation_id) {
+                return Some(op);
+            }
+        }
+    }
+
+    None
+}
+
+fn path_item_operations(path_item: &PathItem) -> impl Iterator<Item = &Operation> {
+    [
+        &path_item.get,
+        &path_item.put,
+        &path_item.post,
+        &path_item.delete,
+        &path_item.options,
+        &path_item.head,
+        &path_item.patch,
+        &path_item.trace,
+    ]
+    .into_iter()
+    .filter_map(|op| op.as_ref())
+}
+
+fn process_operation(
+    output: &mut codegen::Scope,
+    schemas: &IndexMap<String, ReferenceOr<Schema>>,
+    generated_types: &mut HashSet<String>,
+    operation_id: &str,
+    operation: &Operation,
+) {
+    let base_name = to_pascal_case(operation_id);
+
+    if let Some(ReferenceOr::Item(request_body)) = &operation.request_body
+        && let Some(media) = request_body.content.get("application/json")
+        && let Some(schema_or_ref) = &media.schema
+    {
+        process_body_schema(
+            output,
+            schemas,
+            generated_types,
+            &format!("{base_name}Request"),
+            schema_or_ref,
+        );
+    }
+
+    if let Some(ReferenceOr::Item(response)) = first_success_response(&operation.responses)
+        && let Some(media) = response.content.get("application/json")
+        && let Some(schema_or_ref) = &media.schema
+    {
+        process_body_schema(
+            output,
+            schemas,
+            generated_types,
+            &format!("{base_name}Response"),
+            schema_or_ref,
+        );
+    }
+}
+
+fn first_success_response(responses: &Responses) -> Option<&ReferenceOr<Response>> {
+    responses.responses.iter().find_map(|(code, response)| {
+        let is_success = match code {
+            StatusCode::Code(c) => (200..300).contains(c),
+            StatusCode::Range(r) => *r == 2,
+        };
+
+        is_success.then_some(response)
+    })
+}
+
+fn process_body_schema(
+    output: &mut codegen::Scope,
+    schemas: &IndexMap<String, ReferenceOr<Schema>>,
+    generated_types: &mut HashSet<String>,
+    desired_name: &str,
+    schema_or_ref: &ReferenceOr<Schema>,
+) {
+    match schema_or_ref {
+        ReferenceOr::Reference { reference } => {
+            let (schema_name, schema) = resolve_schema_ref(schemas, reference);
+            let target = to_pascal_case(schema_name);
+
+            ensure_struct(output, schemas, generated_types, &target, schema);
+            ensure_type_alias(output, generated_types, desired_name, &target);
+        }
+        ReferenceOr::Item(schema) => {
+            if let SchemaKind::Type(Type::Array(array_type)) = &schema.schema_kind
+                && let Some(ReferenceOr::Reference { reference }) = array_type.items.as_ref()
+            {
+                let (item_name, item_schema) = resolve_schema_ref(schemas, reference);
+                let item_type = to_pascal_case(item_name);
+
+                ensure_struct(output, schemas, generated_types, &item_type, item_schema);
+                ensure_type_alias(
+                    output,
+                    generated_types,
+                    desired_name,
+                    &format!("Vec<{item_type}>"),
+                );
+
+                return;
+            }
+
+            ensure_struct(output, schemas, generated_types, desired_name, schema);
+        }
+    }
+}
+
+fn ensure_type_alias(
+    output: &mut codegen::Scope,
+    generated_types: &mut HashSet<String>,
+    name: &str,
+    target: &str,
+) {
+    if generated_types.contains(name) {
+        return;
+    }
+
+    generated_types.insert(name.to_string());
+    output.new_type_alias(name, target).vis("pub");
 }
 
 fn ensure_struct(
@@ -361,7 +521,7 @@ fn build_field(
 
 fn to_pascal_case(schema_name: &str) -> String {
     schema_name
-        .split(['-', '_'])
+        .split(['-', '_', '/'])
         .map(|part| {
             let mut chars = part.chars();
             let Some(first_char) = chars.next() else {
@@ -401,13 +561,19 @@ mod tests {
     fn generate_matches_minimal_spec_snapshot() {
         let spec = include_str!("../tests/fixtures/minimal_spec.json");
         let expected = include_str!("../tests/fixtures/expected_output.rs");
-        let allowed = [
+        let allowed_schemas = [
             "pull-request",
             "pull-request-simple",
             "pull-request-minimal",
         ];
 
-        assert_eq!(expected, generate(spec, &allowed));
+        assert_eq!(expected, generate(spec, &allowed_schemas, &[]));
+    }
+
+    #[test]
+    fn to_pascal_case_from_operation_id() {
+        assert_eq!("PullsCreateReview", to_pascal_case("pulls/create-review"));
+        assert_eq!("PullsListReviews", to_pascal_case("pulls/list-reviews"));
     }
 
     #[test]
