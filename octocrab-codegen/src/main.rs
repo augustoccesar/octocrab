@@ -249,10 +249,31 @@ fn resolve_field(
                         Type::Number(_number_type) => "f64".to_string(),
                         Type::Integer(_integer_type) => "i64".to_string(),
                         Type::Object(_object_type) => item_type_name,
-                        Type::Array(_array_type) => todo!(),
+                        Type::Array(_array_type) => {
+                            log::debug!(
+                                "Found unsupported type for vetor item: Array. Defaulting to serde_json::Value"
+                            );
+
+                            "serde_json::Value".to_string()
+                        }
                         Type::Boolean(_boolean_type) => "bool".to_string(),
                     },
-                    _ => todo!(),
+                    other_kind => {
+                        let name = match other_kind {
+                            SchemaKind::OneOf { one_of: _ } => "one_of",
+                            SchemaKind::AllOf { all_of: _ } => "all_of",
+                            SchemaKind::AnyOf { any_of: _ } => "any_of",
+                            SchemaKind::Not { not: _ } => "not",
+                            SchemaKind::Any(_) => "any",
+                            _ => unreachable!("Type is caught on the outer branch"),
+                        };
+
+                        log::debug!(
+                            "Found unsupported type for vector item: {name}. Defaulting to serde_json::Value"
+                        );
+
+                        "serde_json::Value".to_string()
+                    }
                 };
 
                 let vec_item_type_name = if schema.schema_data.nullable {
@@ -265,7 +286,20 @@ fn resolve_field(
             }
             Type::Boolean(_boolean_type) => "bool".to_string(),
         },
-        _ => todo!(),
+        other_kind => {
+            let name = match other_kind {
+                SchemaKind::OneOf { one_of: _ } => "one_of",
+                SchemaKind::AllOf { all_of: _ } => "all_of",
+                SchemaKind::AnyOf { any_of: _ } => "any_of",
+                SchemaKind::Not { not: _ } => "not",
+                SchemaKind::Any(_) => "any",
+                _ => unreachable!("Type is caught on the outer branch"),
+            };
+
+            log::debug!("Found unsupported type field: {name}. Defaulting to serde_json::Value");
+
+            "serde_json::Value".to_string()
+        }
     };
 
     let property_type_name = if schema.schema_data.nullable {
