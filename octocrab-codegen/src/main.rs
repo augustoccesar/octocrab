@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, path::PathBuf};
+use std::{borrow::Cow, collections::HashSet, fs, path::PathBuf};
 
 use clap::Parser;
 use indexmap::IndexMap;
@@ -379,9 +379,15 @@ fn to_pascal_case(schema_name: &str) -> String {
         .collect()
 }
 
-fn escape_reserved_name(field_name: &str) -> Option<String> {
+fn escape_reserved_name(field_name: &str) -> Option<Cow<'_, str>> {
+    if field_name == "+1" {
+        return Some(Cow::Borrowed("plus_one"));
+    } else if field_name == "-1" {
+        return Some(Cow::Borrowed("minus_one"));
+    }
+
     if RESERVED_FIELD_NAMES.contains(&field_name) {
-        Some(format!("{field_name}_"))
+        Some(Cow::Owned(format!("{field_name}_")))
     } else {
         None
     }
@@ -395,7 +401,11 @@ mod tests {
     fn generate_matches_minimal_spec_snapshot() {
         let spec = include_str!("../tests/fixtures/minimal_spec.json");
         let expected = include_str!("../tests/fixtures/expected_output.rs");
-        let allowed = ["pull-request", "pull-request-simple", "pull-request-minimal"];
+        let allowed = [
+            "pull-request",
+            "pull-request-simple",
+            "pull-request-minimal",
+        ];
 
         assert_eq!(expected, generate(spec, &allowed));
     }
