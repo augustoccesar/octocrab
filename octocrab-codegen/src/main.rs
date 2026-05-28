@@ -9,9 +9,9 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
     "pull-request-minimal",
 ];
 
-const PROTECTED_NAMES: [&str; 3] = ["ref", "type", "self"];
+const RESERVED_FIELD_NAMES: [&str; 3] = ["ref", "type", "self"];
 
-pub fn parse() {
+pub fn generate() {
     let data = include_str!("../api.github.com.2022-11-28.json");
     let openapi: OpenAPI = serde_json::from_str(data).expect("Could not deserialize input");
 
@@ -34,11 +34,11 @@ pub fn parse() {
             None => panic!("Did not find allowed schema '{allowed_schema_name}' in schemas"),
         };
 
-        let name = schema_name_as_type(allowed_schema_name);
+        let name = to_pascal_case(allowed_schema_name);
 
         log::debug!("Parsing schema for {name}");
 
-        ensure_schema_type(
+        ensure_struct(
             &mut output,
             &components.schemas,
             &mut generated_types,
@@ -58,7 +58,7 @@ pub fn parse() {
     file.write_all(output.to_string().as_bytes()).unwrap();
 }
 
-fn ensure_schema_type(
+fn ensure_struct(
     output: &mut codegen::Scope,
     schemas: &IndexMap<String, ReferenceOr<Schema>>,
     generated_types: &mut HashSet<String>,
@@ -87,7 +87,7 @@ fn ensure_schema_type(
     for (property_name, property) in &object_type.properties {
         log::debug!("Parsing property '{property_name}' of type '{type_name}'");
 
-        struct_def.push_field(resolve_field(
+        struct_def.push_field(build_field(
             output,
             schemas,
             generated_types,
@@ -100,7 +100,7 @@ fn ensure_schema_type(
     output.push_struct(struct_def);
 }
 
-fn ensure_enum_type(
+fn ensure_enum(
     output: &mut codegen::Scope,
     generated_types: &mut HashSet<String>,
     type_name: &str,
@@ -122,7 +122,7 @@ fn ensure_enum_type(
         .derive("Deserialize");
 
     for option in options.iter().filter_map(|opt| opt.as_deref()) {
-        let mut variant = codegen::Variant::new(schema_name_as_type(option));
+        let mut variant = codegen::Variant::new(to_pascal_case(option));
         variant.annotation(format!(r#"#[serde(rename = "{option}")]"#));
 
         enum_def.push_variant(variant);
@@ -131,7 +131,7 @@ fn ensure_enum_type(
     output.push_enum(enum_def);
 }
 
-fn resolve_component_schema_reference<'a>(
+fn resolve_schema_ref<'a>(
     schemas: &'a IndexMap<String, ReferenceOr<Schema>>,
     reference: &'a str,
 ) -> (&'a str, &'a Schema) {
@@ -157,7 +157,7 @@ fn resolve_component_schema_reference<'a>(
     (schema_name, schema)
 }
 
-fn resolve_field(
+fn build_field(
     output: &mut codegen::Scope,
     schemas: &IndexMap<String, ReferenceOr<Schema>>,
     generated_types: &mut HashSet<String>,
@@ -167,18 +167,18 @@ fn resolve_field(
 ) -> codegen::Field {
     let (field_name, schema): (String, &Schema) = match property {
         ReferenceOr::Reference { reference } => {
-            let (schema_name, schema) = resolve_component_schema_reference(schemas, reference);
+            let (schema_name, schema) = resolve_schema_ref(schemas, reference);
 
-            let field_name = schema_name_as_type(schema_name);
+            let field_name = to_pascal_case(schema_name);
 
-            ensure_schema_type(output, schemas, generated_types, &field_name, schema);
+            ensure_struct(output, schemas, generated_types, &field_name, schema);
 
             (field_name, schema)
         }
         ReferenceOr::Item(schema) => {
-            let field_name = format!("{}{}", parent_name, schema_name_as_type(property_name));
+            let field_name = format!("{}{}", parent_name, to_pascal_case(property_name));
 
-            ensure_schema_type(output, schemas, generated_types, &field_name, schema);
+            ensure_struct(output, schemas, generated_types, &field_name, schema);
 
             (field_name, schema)
         }
@@ -189,9 +189,9 @@ fn resolve_field(
             Type::String(string_type) => {
                 if !string_type.enumeration.is_empty() {
                     let enum_type_name =
-                        format!("{}{}", parent_name, schema_name_as_type(property_name));
+                        format!("{}{}", parent_name, to_pascal_case(property_name));
 
-                    ensure_enum_type(
+                    ensure_enum(
                         output,
                         generated_types,
                         &enum_type_name,
@@ -214,11 +214,11 @@ fn resolve_field(
                 let (item_type_name, schema): (String, &Schema) = match items_schema {
                     ReferenceOr::Reference { reference } => {
                         let (schema_name, schema) =
-                            resolve_component_schema_reference(schemas, reference);
+                            resolve_schema_ref(schemas, reference);
 
-                        let item_type_name = schema_name_as_type(schema_name);
+                        let item_type_name = to_pascal_case(schema_name);
 
-                        ensure_schema_type(
+                        ensure_struct(
                             output,
                             schemas,
                             generated_types,
@@ -229,9 +229,9 @@ fn resolve_field(
                         (item_type_name, schema)
                     }
                     ReferenceOr::Item(schema) => {
-                        let item_type_name = format!("{}Item", schema_name_as_type(property_name));
+                        let item_type_name = format!("{}Item", to_pascal_case(property_name));
 
-                        ensure_schema_type(
+                        ensure_struct(
                             output,
                             schemas,
                             generated_types,
@@ -308,7 +308,7 @@ fn resolve_field(
         property_type_name
     };
 
-    let sanitized_property_name = sanitize_field_name(property_name);
+    let sanitized_property_name = escape_reserved_name(property_name);
     let mut field = codegen::Field::new(
         sanitized_property_name.as_deref().unwrap_or(property_name),
         codegen::Type::new(property_type_name),
@@ -326,7 +326,7 @@ fn resolve_field(
     field
 }
 
-fn schema_name_as_type(schema_name: &str) -> String {
+fn to_pascal_case(schema_name: &str) -> String {
     schema_name
         .split(['-', '_'])
         .map(|part| {
@@ -346,8 +346,8 @@ fn schema_name_as_type(schema_name: &str) -> String {
         .collect()
 }
 
-fn sanitize_field_name(field_name: &str) -> Option<String> {
-    if PROTECTED_NAMES.contains(&field_name) {
+fn escape_reserved_name(field_name: &str) -> Option<String> {
+    if RESERVED_FIELD_NAMES.contains(&field_name) {
         Some(format!("{field_name}_"))
     } else {
         None
@@ -357,37 +357,37 @@ fn sanitize_field_name(field_name: &str) -> Option<String> {
 fn main() {
     env_logger::init();
 
-    parse();
+    generate();
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::schema_name_as_type;
+    use crate::to_pascal_case;
 
     #[test]
-    fn schema_name_as_type_kebab_case() {
+    fn to_pascal_case_from_kebab() {
         assert_eq!(
             "PullRequestSimple",
-            schema_name_as_type("pull-request-simple")
+            to_pascal_case("pull-request-simple")
         );
     }
 
     #[test]
-    fn schema_name_as_type_snake_case() {
+    fn to_pascal_case_from_snake() {
         assert_eq!(
             "PullRequestCreationPolicy",
-            schema_name_as_type("pull_request_creation_policy")
+            to_pascal_case("pull_request_creation_policy")
         );
     }
 
     #[test]
-    fn schema_name_as_type_screaming_snake_case() {
-        assert_eq!("PrTitle", schema_name_as_type("PR_TITLE"));
-        assert_eq!("CommitOrPrTitle", schema_name_as_type("COMMIT_OR_PR_TITLE"));
+    fn to_pascal_case_from_screaming_snake() {
+        assert_eq!("PrTitle", to_pascal_case("PR_TITLE"));
+        assert_eq!("CommitOrPrTitle", to_pascal_case("COMMIT_OR_PR_TITLE"));
     }
 
     #[test]
-    fn schema_name_as_type_preserves_pascal_case() {
-        assert_eq!("PullRequest", schema_name_as_type("PullRequest"));
+    fn to_pascal_case_preserves_existing_pascal() {
+        assert_eq!("PullRequest", to_pascal_case("PullRequest"));
     }
 }
