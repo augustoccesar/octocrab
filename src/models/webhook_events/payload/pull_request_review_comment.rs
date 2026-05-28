@@ -1,17 +1,18 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::pulls::{Comment, PullRequest};
+use crate::models::pulls::Comment;
 
 use super::OldValue;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestReviewCommentWebhookEventPayload {
     pub action: PullRequestReviewCommentWebhookEventAction,
     pub enterprise: Option<serde_json::Value>,
     pub comment: Comment,
     pub changes: Option<PullRequestReviewCommentWebhookEventChanges>,
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

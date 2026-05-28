@@ -67,7 +67,7 @@ impl<'octo, 'b> UpdatePullRequestBuilder<'octo, 'b> {
     }
 
     /// Sends the request to update the pull request.
-    pub async fn send(self) -> crate::Result<crate::models::pulls::PullRequest> {
+    pub async fn send(self) -> crate::Result<octocrab_types::generated::PullsUpdateResponse> {
         let route = format!(
             "/repos/{owner}/{repo}/pulls/{pr}",
             owner = self.handler.owner,

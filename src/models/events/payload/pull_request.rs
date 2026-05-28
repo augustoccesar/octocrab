@@ -1,16 +1,16 @@
-use crate::models::pulls::PullRequest;
 use serde::{Deserialize, Serialize};
 
 /// The payload in a [`super::EventPayload::PullRequestEvent`] type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestEventPayload {
     /// The action this event represents.
     pub action: PullRequestEventAction,
     /// The pull request number this event corresponds to.
     pub number: u64,
     /// The pull request this event corresponds to.
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     /// The changes to body or title if this event is of type [`PullRequestEventAction::Edited`].
     pub changes: Option<PullRequestChanges>,
 }

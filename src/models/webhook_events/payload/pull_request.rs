@@ -1,15 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{pulls::PullRequest, teams::RequestedTeam, Author, Label, Milestone};
+#[allow(deprecated)]
+use crate::models::{teams::RequestedTeam, Author, Label, Milestone};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestWebhookEventPayload {
     pub action: PullRequestWebhookEventAction,
     pub assignee: Option<Author>,
     pub enterprise: Option<serde_json::Value>,
     pub number: u64,
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     pub reason: Option<String>,
     pub milestone: Option<Milestone>,
     pub label: Option<Label>,

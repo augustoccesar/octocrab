@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::pulls::{PullRequest, Thread};
+use crate::models::pulls::Thread;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestReviewThreadWebhookEventPayload {
     pub action: PullRequestReviewThreadWebhookEventAction,
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     pub thread: Thread,
 }
 

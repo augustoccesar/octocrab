@@ -763,3 +763,49 @@ pub struct PullRequestMinimal {
 }
 
 pub type PullsGetResponse = PullRequest;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PullsCreateRequest {
+    /// The title of the new pull request. Required unless `issue` is specified.
+    pub title: Option<String>,
+    /// The name of the branch where your changes are implemented. For cross-repository pull requests in the same network, namespace `head` with a user like this: `username:branch`.
+    pub head: String,
+    /// The name of the repository where the changes in the pull request were made. This field is required for cross-repository pull requests if both repositories are owned by the same organization.
+    pub head_repo: Option<String>,
+    /// The name of the branch you want the changes pulled into. This should be an existing branch on the current repository. You cannot submit a pull request to one repository that requests a merge to a base of another repository.
+    pub base: String,
+    /// The contents of the pull request.
+    pub body: Option<String>,
+    /// Indicates whether [maintainers can modify](https://docs.github.com/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork/) the pull request.
+    pub maintainer_can_modify: Option<bool>,
+    /// Indicates whether the pull request is a draft. See "[Draft Pull Requests](https://docs.github.com/articles/about-pull-requests#draft-pull-requests)" in the GitHub Help documentation to learn more.
+    pub draft: Option<bool>,
+    /// An issue in the repository to convert to a pull request. The issue title, body, and comments will become the title, body, and comments on the new pull request. Required unless `title` is specified.
+    pub issue: Option<i64>,
+}
+
+pub type PullsCreateResponse = PullRequest;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum PullsUpdateRequestState {
+    #[serde(rename = "open")]
+    Open,
+    #[serde(rename = "closed")]
+    Closed,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PullsUpdateRequest {
+    /// The title of the pull request.
+    pub title: Option<String>,
+    /// The contents of the pull request.
+    pub body: Option<String>,
+    /// State of this Pull Request. Either `open` or `closed`.
+    pub state: Option<PullsUpdateRequestState>,
+    /// The name of the branch you want your changes pulled into. This should be an existing branch on the current repository. You cannot update the base branch on a pull request to point to another repository.
+    pub base: Option<String>,
+    /// Indicates whether [maintainers can modify](https://docs.github.com/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork/) the pull request.
+    pub maintainer_can_modify: Option<bool>,
+}
+
+pub type PullsUpdateResponse = PullRequest;

@@ -71,7 +71,7 @@ const ALLOWED_SCHEMAS: [&str; 3] = [
     "pull-request-minimal",
 ];
 
-const ALLOWED_OPERATIONS: [&str; 1] = ["pulls/get"];
+const ALLOWED_OPERATIONS: [&str; 4] = ["pulls/get", "pulls/list", "pulls/create", "pulls/update"];
 
 const RESERVED_FIELD_NAMES: [&str; 3] = ["ref", "type", "self"];
 
@@ -223,6 +223,8 @@ fn process_body_schema(
             ensure_type_alias(output, generated_types, desired_name, &target);
         }
         ReferenceOr::Item(schema) => {
+            // Body is an inline array of $ref T: just ensure the item type is generated.
+            // The wrapping shape (Page<T>, Vec<T>, ...) is the caller's choice.
             if let SchemaKind::Type(Type::Array(array_type)) = &schema.schema_kind
                 && let Some(ReferenceOr::Reference { reference }) = array_type.items.as_ref()
             {
@@ -230,12 +232,6 @@ fn process_body_schema(
                 let item_type = to_pascal_case(item_name);
 
                 ensure_struct(output, schemas, generated_types, &item_type, item_schema);
-                ensure_type_alias(
-                    output,
-                    generated_types,
-                    desired_name,
-                    &format!("Vec<{item_type}>"),
-                );
 
                 return;
             }

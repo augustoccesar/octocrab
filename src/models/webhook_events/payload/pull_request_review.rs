@@ -1,14 +1,15 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::pulls::{PullRequest, Review};
+use crate::models::pulls::Review;
 
 use super::OldValue;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestReviewWebhookEventPayload {
     pub action: PullRequestReviewWebhookEventAction,
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     pub review: Review,
     pub changes: Option<PullRequestReviewWebhookEventChanges>,
 }

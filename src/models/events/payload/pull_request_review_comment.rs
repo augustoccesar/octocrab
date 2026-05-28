@@ -1,14 +1,15 @@
-use crate::models::{issues::Comment, pulls::PullRequest};
+use crate::models::issues::Comment;
 use serde::{Deserialize, Serialize};
 
 /// The payload in a [`super::EventPayload::PullRequestReviewCommentEvent`] type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestReviewCommentEventPayload {
     /// The action this event represents.
     pub action: PullRequestReviewCommentEventAction,
     /// The pull request this event corresponds to.
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     /// The comment this event corresponds to.
     pub comment: Comment,
     /// The changes to body or title if this event is of type [`PullRequestReviewCommentEventAction::Edited`].

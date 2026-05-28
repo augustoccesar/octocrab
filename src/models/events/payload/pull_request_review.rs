@@ -1,14 +1,15 @@
-use crate::models::pulls::{PullRequest, Review};
+use crate::models::pulls::Review;
 use serde::{Deserialize, Serialize};
 
 /// The payload in a [`super::EventPayload::PullRequestReviewEvent`] type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[allow(deprecated)]
 pub struct PullRequestReviewEventPayload {
     /// The action this event represents.
     pub action: PullRequestReviewEventAction,
     /// The pull request this event corresponds to.
-    pub pull_request: PullRequest,
+    pub pull_request: crate::models::pulls::PullRequest,
     /// The review that was affected.
     pub review: Review,
 }

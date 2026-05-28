@@ -1,6 +1,7 @@
 use super::*;
 use crate::models::commits::CommentReactions;
 
+#[deprecated = "Prefer using the generated type from octocrab-types"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct PullRequest {
