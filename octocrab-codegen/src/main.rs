@@ -88,6 +88,28 @@ fn ensure_schema_type(
     output.push_struct(struct_def);
 }
 
+fn ensure_enum_type(
+    output: &mut codegen::Scope,
+    generated_types: &mut HashSet<String>,
+    type_name: &str,
+    options: &[Option<String>],
+) {
+    if generated_types.contains(type_name) {
+        return;
+    }
+
+    generated_types.insert(type_name.to_string());
+
+    let mut enum_def = codegen::Enum::new(type_name);
+
+    for option in options.iter().filter_map(|opt| opt.as_deref()) {
+        let variant = codegen::Variant::new(schema_name_as_type(&option));
+        enum_def.push_variant(variant);
+    }
+
+    output.push_enum(enum_def);
+}
+
 fn resolve_component_schema_reference<'a>(
     schemas: &'a IndexMap<String, ReferenceOr<Schema>>,
     reference: &'a str,
@@ -147,7 +169,26 @@ fn resolve_field(
 
     let property_type_name = match &schema.schema_kind {
         SchemaKind::Type(schema_kind_type) => match schema_kind_type {
-            Type::String(_string_type) => "String".to_string(),
+            Type::String(string_type) => {
+                if string_type.enumeration.len() > 0 {
+                    let enum_type_name = format!(
+                        "{}{}",
+                        schema_name_as_type(parent_name),
+                        schema_name_as_type(property_name)
+                    );
+
+                    ensure_enum_type(
+                        output,
+                        generated_types,
+                        &enum_type_name,
+                        &string_type.enumeration,
+                    );
+
+                    enum_type_name
+                } else {
+                    "String".to_string()
+                }
+            }
             Type::Number(_number_type) => "f64".to_string(),
             Type::Integer(_integer_type) => "i64".to_string(),
             Type::Object(_object_type) => field_name,

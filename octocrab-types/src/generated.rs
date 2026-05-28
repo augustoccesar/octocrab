@@ -1,3 +1,8 @@
+enum PullRequestState {
+    Open,
+    Closed,
+}
+
 struct SimpleUser {
     name: Option<String>,
     email: Option<String>,
@@ -31,6 +36,11 @@ struct LabelsItem {
     description: Option<String>,
     color: String,
     default: bool,
+}
+
+enum NullableMilestoneState {
+    Open,
+    Closed,
 }
 
 struct NullableSimpleUser {
@@ -67,7 +77,7 @@ struct NullableMilestone {
     /// The number of the milestone.
     number: i64,
     /// The state of the milestone.
-    state: String,
+    state: NullableMilestoneState,
     /// The title of the milestone.
     title: String,
     description: Option<String>,
@@ -79,6 +89,11 @@ struct NullableMilestone {
     updated_at: String,
     closed_at: Option<String>,
     due_on: Option<String>,
+}
+
+enum TeamSimpleType {
+    Enterprise,
+    Organization,
 }
 
 struct TeamSimple {
@@ -104,7 +119,7 @@ struct TeamSimple {
     /// Distinguished Name (DN) that team maps to within LDAP environment
     ldap_dn: String,
     /// The ownership type of the team
-    type: String,
+    type: TeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
@@ -126,6 +141,33 @@ struct RepositoryPermissions {
     triage: bool,
     push: bool,
     maintain: bool,
+}
+
+enum RepositoryPullRequestCreationPolicy {
+    All,
+    CollaboratorsOnly,
+}
+
+enum RepositorySquashMergeCommitTitle {
+    PRTITLE,
+    COMMITORPRTITLE,
+}
+
+enum RepositorySquashMergeCommitMessage {
+    PRBODY,
+    COMMITMESSAGES,
+    BLANK,
+}
+
+enum RepositoryMergeCommitTitle {
+    PRTITLE,
+    MERGEMESSAGE,
+}
+
+enum RepositoryMergeCommitMessage {
+    PRBODY,
+    PRTITLE,
+    BLANK,
 }
 
 struct RepositoryCodeSearchIndexStatus {
@@ -220,7 +262,7 @@ struct Repository {
     /// Whether pull requests are enabled.
     has_pull_requests: bool,
     /// The policy controlling who can create pull requests: all or collaborators_only.
-    pull_request_creation_policy: String,
+    pull_request_creation_policy: RepositoryPullRequestCreationPolicy,
     /// Whether the repository is archived.
     archived: bool,
     /// Returns whether or not this repository disabled.
@@ -247,24 +289,24 @@ struct Repository {
     /// 
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `COMMIT_OR_PR_TITLE` - default to the commit's title (if only one commit) or the pull request's title (when more than one commit).
-    squash_merge_commit_title: String,
+    squash_merge_commit_title: RepositorySquashMergeCommitTitle,
     /// The default value for a squash merge commit message:
     /// 
     /// - `PR_BODY` - default to the pull request's body.
     /// - `COMMIT_MESSAGES` - default to the branch's commit messages.
     /// - `BLANK` - default to a blank commit message.
-    squash_merge_commit_message: String,
+    squash_merge_commit_message: RepositorySquashMergeCommitMessage,
     /// The default value for a merge commit title.
     /// 
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `MERGE_MESSAGE` - default to the classic title for a merge message (e.g., Merge pull request #123 from branch-name).
-    merge_commit_title: String,
+    merge_commit_title: RepositoryMergeCommitTitle,
     /// The default value for a merge commit message.
     /// 
     /// - `PR_TITLE` - default to the pull request's title.
     /// - `PR_BODY` - default to the pull request's body.
     /// - `BLANK` - default to a blank commit message.
-    merge_commit_message: String,
+    merge_commit_message: RepositoryMergeCommitMessage,
     /// Whether to allow merge commits for pull requests.
     allow_merge_commit: bool,
     /// Whether to allow forking this repo
@@ -324,11 +366,28 @@ struct PullRequestLinks {
     self: Link,
 }
 
+enum PullRequestAuthorAssociation {
+    COLLABORATOR,
+    CONTRIBUTOR,
+    FIRSTTIMER,
+    FIRSTTIMECONTRIBUTOR,
+    MANNEQUIN,
+    MEMBER,
+    NONE,
+    OWNER,
+}
+
+enum AutoMergeMergeMethod {
+    Merge,
+    Squash,
+    Rebase,
+}
+
 struct AutoMerge {
     /// A GitHub user.
     enabled_by: SimpleUser,
     /// The merge method to use.
-    merge_method: String,
+    merge_method: AutoMergeMergeMethod,
     /// Title for the merge commit message.
     commit_title: String,
     /// Commit message for the merge commit.
@@ -351,7 +410,7 @@ struct PullRequest {
     /// Number uniquely identifying the pull request within its repository.
     number: i64,
     /// State of this Pull Request. Either `open` or `closed`.
-    state: String,
+    state: PullRequestState,
     locked: bool,
     /// The title of the pull request.
     title: String,
@@ -376,7 +435,7 @@ struct PullRequest {
     base: PullRequestBase,
     _links: PullRequestLinks,
     /// How the author is associated with the repository.
-    author_association: String,
+    author_association: PullRequestAuthorAssociation,
     /// The status of auto merging a pull request.
     auto_merge: Option<AutoMerge>,
     /// Indicates whether or not the pull request is a draft.
@@ -405,6 +464,16 @@ struct TeamPermissions {
     admin: bool,
 }
 
+enum TeamType {
+    Enterprise,
+    Organization,
+}
+
+enum NullableTeamSimpleType {
+    Enterprise,
+    Organization,
+}
+
 struct NullableTeamSimple {
     /// Unique identifier of the team
     id: i64,
@@ -428,7 +497,7 @@ struct NullableTeamSimple {
     /// Distinguished Name (DN) that team maps to within LDAP environment
     ldap_dn: String,
     /// The ownership type of the team
-    type: String,
+    type: NullableTeamSimpleType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
@@ -450,7 +519,7 @@ struct Team {
     members_url: String,
     repositories_url: String,
     /// The ownership type of the team
-    type: String,
+    type: TeamType,
     /// Unique identifier of the organization to which this team belongs
     organization_id: i64,
     /// Unique identifier of the enterprise to which this team belongs
@@ -498,6 +567,17 @@ struct PullRequestSimpleLinks {
     self: Link,
 }
 
+enum PullRequestSimpleAuthorAssociation {
+    COLLABORATOR,
+    CONTRIBUTOR,
+    FIRSTTIMER,
+    FIRSTTIMECONTRIBUTOR,
+    MANNEQUIN,
+    MEMBER,
+    NONE,
+    OWNER,
+}
+
 struct PullRequestSimple {
     url: String,
     id: i64,
@@ -536,7 +616,7 @@ struct PullRequestSimple {
     base: PullRequestSimpleBase,
     _links: PullRequestSimpleLinks,
     /// How the author is associated with the repository.
-    author_association: String,
+    author_association: PullRequestSimpleAuthorAssociation,
     /// The status of auto merging a pull request.
     auto_merge: Option<AutoMerge>,
     /// Indicates whether or not the pull request is a draft.
